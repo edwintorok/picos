@@ -28,7 +28,9 @@ let test_completes () =
     with
     | () -> assert false
     | exception Failure msg -> assert (msg = "42")
-    | exception _ -> assert false
+    | exception e ->
+      Printexc.print_backtrace stderr;
+      Alcotest.V1.failf "This exception is not expected here: %s" (Printexc.to_string e)
   end;
   let (Packed computation) = !packed in
   assert (not (Computation.is_running computation));
@@ -113,8 +115,9 @@ let test_fatal () =
     let computation = Computation.create () in
     let fiber = Fiber.create ~forbid:false computation in
     let fatal_exn_handler exn =
-      Computation.cancel computation exn (Printexc.get_raw_backtrace ());
-      raise exn
+      let bt = Printexc.get_raw_backtrace () in
+      Computation.cancel computation exn bt;
+      Printexc.raise_with_backtrace exn bt
     in
     Test_scheduler.run_fiber ~fatal_exn_handler ~max_domains:3 fiber @@ fun _ ->
     for _ = 1 to 100 do

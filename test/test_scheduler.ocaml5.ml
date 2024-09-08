@@ -3,6 +3,9 @@ let () = Random.self_init ()
 
 open Picos
 
+let () =
+  prerr_endline "Running OCaml 5 version"
+
 let init = ref false
 
 let init () =
@@ -30,11 +33,12 @@ let rec run_fiber ?(max_domains = 1) ?(allow_lwt = true) ?fatal_exn_handler
     fiber main =
   init ();
   let scheduler =
-    match Random.int 4 with
+    (*match Random.int 5 with
     | 0 -> `Fifos
     | 1 -> `Multififos
     | 2 -> `Randos
-    | _ -> `Lwt
+    | 3 -> `Lwt
+    | _ ->*) `Deterministic
   in
   let n_domains = Int.min max_domains (Domain.recommended_domain_count ()) in
   let quota = 1 + Random.int 100 in
@@ -72,6 +76,10 @@ let rec run_fiber ?(max_domains = 1) ?(allow_lwt = true) ?fatal_exn_handler
           (fun () ->
             Picos_mux_multififo.run_fiber_on ~quota ?fatal_exn_handler
               ~n_domains fiber main)
+    | `Deterministic ->
+      Some (fun () ->
+        Picos_mux_deterministic.run_fiber ?fatal_exn_handler fiber main
+      )
   with
   | None -> run_fiber ~max_domains ~allow_lwt ?fatal_exn_handler fiber main
   | Some run -> begin
@@ -82,7 +90,9 @@ let rec run_fiber ?(max_domains = 1) ?(allow_lwt = true) ?fatal_exn_handler
           | `Fifos -> "fifos"
           | `Multififos -> "multififos"
           | `Randos -> "randos"
-          | `Lwt -> "lwt")
+          | `Lwt -> "lwt"
+          | `Deterministic -> "deterministic"
+          )
           quota n_domains;
         raise exn
     end

@@ -1,0 +1,5 @@
+(library
+	(name picos_aux_choice)
+	(public_name picos_aux.choice)
+	(virtual_modules picos_aux_choice)
+)

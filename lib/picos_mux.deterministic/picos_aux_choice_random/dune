@@ -1,0 +1,5 @@
+(library 
+	(name picos_aux_choice_random)
+	(public_name picos_aux.choice.random)
+	(implements picos_aux_choice)
+)
