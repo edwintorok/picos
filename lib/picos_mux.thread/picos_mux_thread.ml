@@ -72,7 +72,7 @@ and yield t =
   Thread.yield ()
 
 and cancel_after : type a. _ -> a Computation.t -> _ =
- (* We need an explicit type signature to allow OCaml to generalize the tyoe as
+ (* We need an explicit type signature to allow OCaml to generalize the type as
     all of the handlers are in a single recursive definition. *)
  fun t computation ~seconds exn_bt ->
   Fiber.check t.fiber;

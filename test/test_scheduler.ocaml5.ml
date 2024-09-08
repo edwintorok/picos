@@ -3,7 +3,14 @@ let () = Random.self_init ()
 
 open Picos
 
+let () =
+  prerr_endline "Running OCaml 5 version"
+
 let init = ref false
+
+let picos_mux_trace =
+  (* matches the env var used by Trace_tef.setup () *)
+  Sys.getenv_opt "TRACE" |> Option.is_some
 
 let init () =
   if not !init then begin
@@ -23,14 +30,24 @@ let init () =
       in
       Picos_io_select.return_on_sigchld computation ()
     in
-    propagate ()
+    propagate ();
+
+    if picos_mux_trace then begin
+      Trace_tef.setup ();
+      at_exit Trace_core.shutdown
+    end
   end
 
 let rec run_fiber ?(max_domains = 1) ?(allow_lwt = true) ?fatal_exn_handler
     fiber main =
+  let main = 
+    if picos_mux_trace then
+      (fun fiber -> Picos_mux_trace.run_fiber ?fatal_exn_handler fiber main)
+    else main
+  in
   init ();
   let scheduler =
-    match Random.int 4 with
+    match Random.int 5 with
     | 0 -> `Fifos
     | 1 -> `Multififos
     | 2 -> `Randos
@@ -82,7 +99,8 @@ let rec run_fiber ?(max_domains = 1) ?(allow_lwt = true) ?fatal_exn_handler
           | `Fifos -> "fifos"
           | `Multififos -> "multififos"
           | `Randos -> "randos"
-          | `Lwt -> "lwt")
+          | `Lwt -> "lwt"
+          )
           quota n_domains;
         raise exn
     end
@@ -92,4 +110,4 @@ let run ?max_domains ?allow_lwt ?fatal_exn_handler ?(forbid = false) main =
   let fiber = Fiber.create ~forbid computation in
   let main _ = Computation.capture computation main () in
   run_fiber ?max_domains ?allow_lwt ?fatal_exn_handler fiber main;
-  Computation.await computation
+  Computation.peek_exn computation

@@ -8,7 +8,7 @@ license: "ISC"
 homepage: "https://github.com/ocaml-multicore/picos"
 bug-reports: "https://github.com/ocaml-multicore/picos/issues"
 depends: [
-  "dune" {>= "3.14"}
+  "dune" {>= "3.15"}
   "picos_io" {= version}
   "cohttp" {>= "6.0.0~beta2"}
   "fmt" {>= "0.9.0"}

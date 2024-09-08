@@ -1,0 +1,13 @@
+(library
+ (name picos_mux_trace)
+ (ocamlopt_flags (:standard -inlining-report))
+ (public_name picos_mux.trace)
+ (enabled_if
+  (and
+  (>= %{ocaml_version} 5.0.0)
+  %{lib-available:trace})
+ )
+ (libraries
+  (re_export picos)
+  trace
+ ))

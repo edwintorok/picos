@@ -13,9 +13,14 @@
     picos_mux.random
     picos_mux.fifo
     picos_mux.multififo
+    picos_mux.trace
+    trace
+    trace-tef
     ->
     test_scheduler.ocaml5.ml)
-   (picos_mux.thread lwt.unix -> test_scheduler.ocaml4.ml))))
+   ;(picos_mux.thread lwt.unix -> test_scheduler.ocaml4.ml)
+   
+   )))
 
 (library
  (package picos_meta)
@@ -27,6 +32,7 @@
 (test
  (package picos_meta)
  (name test_picos)
+ (deps (env_var TRACE))
  (modules test_picos)
  (libraries
   alcotest
@@ -42,6 +48,7 @@
 (test
  (package picos_meta)
  (name test_sync)
+ (deps (env_var TRACE))
  (modules test_sync)
  (libraries
   alcotest
@@ -94,6 +101,7 @@
 (test
  (package picos_meta)
  (name test_server_and_client)
+ (deps (env_var TRACE))
  (modules test_server_and_client)
  (libraries
   picos_io
@@ -107,6 +115,7 @@
 (test
  (package picos_meta)
  (name test_io)
+ (deps (env_var TRACE))
  (modules test_io)
  (libraries
   alcotest
@@ -119,6 +128,7 @@
 (test
  (package picos_meta)
  (name test_io_cohttp)
+ (deps (env_var TRACE))
  (modules test_io_cohttp)
  (libraries
   picos_io_cohttp
@@ -131,6 +141,7 @@
 (test
  (package picos_meta)
  (name test_io_with_lwt)
+ (deps (env_var TRACE))
  (modules test_io_with_lwt)
  (libraries
   alcotest
@@ -226,6 +237,7 @@
 (test
  (package picos_meta)
  (name test_schedulers)
+ (deps (env_var TRACE))
  (modules test_schedulers)
  (libraries
   alcotest
@@ -237,6 +249,7 @@
   picos_std.sync
   test_scheduler
   test_util
+  trace-tef
   unix))
 
 ;;
@@ -244,6 +257,7 @@
 (test
  (package picos_meta)
  (name test_structured)
+ (deps (env_var TRACE))
  (modules test_structured)
  (libraries
   alcotest
@@ -260,6 +274,7 @@
 (test
  (package picos_meta)
  (name test_finally)
+ (deps (env_var TRACE))
  (modules test_finally)
  (libraries alcotest picos picos_std.finally test_scheduler test_util))
 

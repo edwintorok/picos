@@ -10,7 +10,7 @@ license: "ISC"
 homepage: "https://github.com/ocaml-multicore/picos"
 bug-reports: "https://github.com/ocaml-multicore/picos/issues"
 depends: [
-  "dune" {>= "3.14"}
+  "dune" {>= "3.15"}
   "backoff" {>= "0.1.0"}
   "thread-local-storage" {>= "0.2"}
   "odoc" {with-doc}
