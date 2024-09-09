@@ -18,7 +18,6 @@ let create () =
   }
 
 let choose = Picos_aux_choice.bool
-
 let cardinal t = Atomic.get t.map |> ChoiceMap.cardinal
 
 (* We choose a position both when inserting and removing.
@@ -29,28 +28,37 @@ let cardinal t = Atomic.get t.map |> ChoiceMap.cardinal
    25% LIFO
    50% other uniformly random
 *)
-let choose_deterministic_position map =
+let choose_deterministic_insert_position map =
   if choose () then
-    let special =
-      if choose () then ChoiceMap.min_binding_opt map
-      else ChoiceMap.max_binding_opt map
+    (* there is a very low chance this would overflow, but accept that as inserting at random *)
+    let special, delta =
+      if choose () then (ChoiceMap.min_binding_opt map, -1)
+      else (ChoiceMap.max_binding_opt map, 1)
     in
-    match special with
-    | None -> 0
-    | Some (pos, _) ->
-        (* there is a very low chance this would overflow, but accept that as inserting at the end *)
-        pos - 1
+    match special with None -> 0 | Some (pos, _) -> pos + delta
   else Picos_aux_choice.bits ()
 
-let rec choose_position t pos =
-  if ChoiceMap.mem pos t then choose_position t (pos + 1) else pos
+let rec choose_insert_position t pos =
+  if ChoiceMap.mem pos t then choose_insert_position t (pos + 1) else pos
 
-let choose_position map =
-  choose_position map (choose_deterministic_position map)
+let choose_insert_position map =
+  choose_insert_position map (choose_deterministic_insert_position map)
+
+let choose_existing_item map =
+  if choose () then
+    if choose () then ChoiceMap.min_binding_opt map
+    else ChoiceMap.max_binding_opt map
+  else
+    let position = Picos_aux_choice.bits () in
+    match ChoiceMap.find_first_opt (( >= ) position) map with
+    | Some item -> Some item
+    | None ->
+        (* TODO: get min, max and restrict position to that *)
+        ChoiceMap.choose_opt map
 
 let rec push t e =
   let prev = Atomic.get t.map in
-  let pos = choose_position prev in
+  let pos = choose_insert_position prev in
   let next = ChoiceMap.add pos e prev in
   if Atomic.compare_and_set t.map prev next then begin
     Mutex.lock t.wait_mutex;
@@ -64,10 +72,10 @@ let rec push t e =
 
 let rec pop_opt t =
   let prev = Atomic.get t.map in
-  let position = choose_position prev in
-  (* needs to contain equality for the choice to be able to emulate LIFO/FIFO *)
-  match ChoiceMap.find_first_opt (( >= ) position) prev with
-  | None -> None
+  match choose_existing_item prev with
+  | None ->
+    assert (ChoiceMap.is_empty prev);
+    None
   | Some (pos, item) ->
       let next = ChoiceMap.remove pos prev in
       if Atomic.compare_and_set t.map prev next then Some item
