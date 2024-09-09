@@ -7,7 +7,7 @@ let make_seed () =
 
 let () =
 	let seed = make_seed () in
-	Printf.eprintf "QCHECK_SEED = %d\n" seed
+	Printf.eprintf "QCHECK_SEED=%d\n" seed
 
 let bits = Random.bits
 let bool = Random.bool

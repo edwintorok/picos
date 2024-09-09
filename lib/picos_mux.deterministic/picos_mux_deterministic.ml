@@ -88,4 +88,5 @@ let run ?(forbid = false) main =
   let fiber = Fiber.create ~forbid computation in
   let main _ = Computation.capture computation main () in
   run_fiber fiber main;
+  assert (not (Computation.is_running computation));
   Computation.await computation
