@@ -7,7 +7,8 @@ let make_seed () =
 
 let init () =
 	let seed = make_seed () in
-	Printf.eprintf "QCHECK_SEED=%d\n" seed
+	Printf.eprintf "QCHECK_SEED=%d\n" seed;
+  Random.init seed
 
 
 let () = init ()
