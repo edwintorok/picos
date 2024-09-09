@@ -1,3 +1,6 @@
+val init: unit -> unit
+(** [init ()] initialises the generator *)
+
 val bool: unit -> bool
 (** [bool ()] returns a deterministically chosen boolean *)
 

@@ -5,9 +5,12 @@ let make_seed () =
 		Random.self_init ();
 		Random.bits ()
 
-let () =
+let init () =
 	let seed = make_seed () in
 	Printf.eprintf "QCHECK_SEED=%d\n" seed
+
+
+let () = init ()
 
 let bits = Random.bits
 let bool = Random.bool

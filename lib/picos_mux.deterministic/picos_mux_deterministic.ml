@@ -120,6 +120,8 @@ let rec run_fiber ~fatal_exn_handler ~parent (current : Fiber.t) main () =
   Effect.Deep.match_with main current { retc; exnc = fatal_exn_handler; effc }
 
 let run_fiber ?(fatal_exn_handler = exnc) current main =
+  (* otherwise Random.self_init overrides our seed... *)
+  Picos_aux_choice.init ();
   let parent =
     Trace.enter_manual_toplevel_span ~flavor:`Async ~__FUNCTION__ ~__LINE__
       ~__FILE__ "run_fiber"
