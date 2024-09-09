@@ -185,6 +185,7 @@ let test_cross_scheduler_wakeup () =
   done
 
 let () =
+  Trace_tef.with_setup ~out:(`File "trace.json") () @@ fun () ->
   [
     ("Trivial main returns", [ Alcotest.test_case "" `Quick test_returns ]);
     ( "Scheduler completes main computation",

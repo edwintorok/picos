@@ -7,4 +7,5 @@
   (re_export picos)
   picos_aux.mpscq
   picos_aux_choice
+  trace
  ))
