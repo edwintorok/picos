@@ -19,6 +19,8 @@ let create () =
 
 let choose = Picos_aux_choice.bool
 
+let cardinal t = Atomic.get t.map |> ChoiceMap.cardinal
+
 (* We choose a position both when inserting and removing.
    We do not want a fully uniform distribution, because the chance of emulating FIFO or LIFO is quite low.
    But we want to test these common modes too, in addition to the uniformly random one.

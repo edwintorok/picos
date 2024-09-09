@@ -16,3 +16,6 @@ val iter: 'a t -> ('a -> unit) -> unit
 (** [iter t f] iterates over a deterministically chosen, potentially empty, subset of [t] using [f] on each element.
   [f ()] is allowed to insert new elements into [t] and these could be considered by the same invocation of [iter] too.
  *)
+
+val cardinal : _ t -> int
+(** [cardinal t] returns the size of [t] for debugging purposes. *)
