@@ -103,7 +103,16 @@ let rec run_fiber ~fatal_exn_handler ~parent (current : Fiber.t) main () =
     push ~explicit_span
     @@ run_fiber ~fatal_exn_handler ~parent:explicit_span fiber main;
     return () ~explicit_span cont
-  and handle_yield = handle ~parent ~name:"yield" current @@ return ()
+  and handle_yield = handle ~parent ~name:"yield" current @@ fun ~explicit_span cont ->
+    (* first pop another task, so that we ensure we don't always yield back to ourselves,
+       which can lead to not making progress and failing tests.
+     *)
+    let other = Runnable.pop_opt ready in
+    trace_cardinal explicit_span;
+    if Option.is_some other then Trace.message ~span:explicit_span.span "yielding"
+    else Trace.message ~span:explicit_span.span "not yielding";
+    Option.iter run other;
+    return () ~explicit_span cont
   and handle_await trigger =
     handle ~trigger ~parent ~name:"await" current @@ await trigger current
   in

@@ -12,6 +12,9 @@ val push: 'a t -> 'a -> unit
 *)
 val pop: 'a t -> 'a
 
+(** [pop_opt t] is like {!val:pop}, but doesn't wait and returns None instead. *)
+val pop_opt: 'a t -> 'a option
+
 val iter: 'a t -> ('a -> unit) -> unit
 (** [iter t f] iterates over a deterministically chosen, potentially empty, subset of [t] using [f] on each element.
   [f ()] is allowed to insert new elements into [t] and these could be considered by the same invocation of [iter] too.
