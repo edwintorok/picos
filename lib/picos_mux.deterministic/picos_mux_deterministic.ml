@@ -68,6 +68,11 @@ let resume ~explicit_span trigger fiber cont =
   Trace.exit_manual_span explicit_span;
   Fiber.resume fiber cont
 
+let discontinue_ exn bt ~explicit_span cont =
+  push ~explicit_span @@ fun () ->
+  Trace.exit_manual_span explicit_span;
+  Effect.Deep.discontinue_with_backtrace cont exn bt
+
 let return value ~explicit_span cont =
   (* we may return immediately if this is at the front of the queue,
      otherwise we may run some other effects first *)
@@ -88,6 +93,37 @@ let await trigger current ~explicit_span cont =
     Trace.exit_manual_span explicit_span;
     Fiber.resume current cont
   end
+
+module Timeout = struct
+  type t = { abstime: float; unique: int  }
+
+  let make =
+    let counter = Atomic.make 0 in
+    fun relative ->
+    (* TODO: mtime *)
+    let abstime = Unix.gettimeofday () +. relative in
+    {abstime; unique = Atomic.fetch_and_add counter 1}
+
+  let compare a b =
+    match Float.compare a.abstime b.abstime with
+    | 0 -> Int.compare a.unique b.unique
+    | n -> n
+
+end
+
+module Timeouts = Map.Make(Timeout)
+
+let timers = Atomic.make Timeouts.empty
+
+let rec update_timers f =
+  let old = Atomic.get timers in
+  let next = f old in
+  if Atomic.compare_and_set timers old next then ()
+  else begin
+    Domain.cpu_relax ();
+    update_timers f
+  end
+
 
 let rec run_fiber ~fatal_exn_handler ~parent (current : Fiber.t) main () =
   let parent =
@@ -115,6 +151,38 @@ let rec run_fiber ~fatal_exn_handler ~parent (current : Fiber.t) main () =
     return () ~explicit_span cont
   and handle_await trigger =
     handle ~trigger ~parent ~name:"await" current @@ await trigger current
+  and handle_cancel_after seconds exn bt computation =
+    handle ~parent ~name:"cancel_after" current @@ fun ~explicit_span cont ->
+    (* TODO: build a list of these actions in virtual time, and decide which ones to cancel based on virtual time.
+       Also if there are no pending actions then cancel everything immediately?
+
+       for now we dispatch to picos_select
+     *)
+    let key = Timeout.make seconds in
+    let cancel _trigger () () =
+      update_timers (fun old -> Timeouts.remove key old);
+      Computation.cancel computation exn bt
+    in
+
+    let trigger = Trigger.(from_action[@alert "-handler"]) () () cancel  in
+
+    update_timers (fun old -> Timeouts.add key trigger old);
+
+    if not (Computation.try_attach computation trigger) then
+      Trigger.signal trigger;
+    let btexn =
+      try
+        Picos_io_select.cancel_after computation ~seconds exn bt;
+        None
+      with exn ->
+        let bt = Printexc.get_raw_backtrace () in
+        Some (bt, exn)
+    in
+    match btexn with
+    | None ->
+      return () ~explicit_span cont
+    | Some (bt, exn) ->
+        discontinue_ exn bt ~explicit_span cont
   in
   let effc :
       type a. a Effect.t -> ((a, unit) Effect.Deep.continuation -> unit) option
@@ -123,6 +191,7 @@ let rec run_fiber ~fatal_exn_handler ~parent (current : Fiber.t) main () =
     | Fiber.Spawn { fiber; main } -> handle_spawn fiber main
     | Fiber.Yield -> handle_yield
     | Trigger.Await trigger -> handle_await trigger
+    | Computation.Cancel_after {seconds; exn; bt; computation} -> handle_cancel_after seconds exn bt computation
     | _ -> None
   and finally () = Trace.exit_manual_span parent in
   Fun.protect ~finally @@ fun () ->

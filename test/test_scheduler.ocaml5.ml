@@ -38,7 +38,7 @@ let rec run_fiber ?(max_domains = 1) ?(allow_lwt = true) ?fatal_exn_handler
     | 1 -> `Multififos
     | 2 -> `Randos
     | 3 -> `Lwt
-    | _ ->*) `Deterministic
+    | _ -> *)`Deterministic
   in
   let n_domains = Int.min max_domains (Domain.recommended_domain_count ()) in
   let quota = 1 + Random.int 100 in
