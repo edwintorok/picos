@@ -2,11 +2,13 @@ open Picos
 
 let ready = Runnable.create ()
 
-let run f =
+(*let run f =
   try f ()
   with e ->
     Printexc.print_backtrace stderr;
-    raise e
+    raise e*)
+
+let run f = f ()
 
 (** [maybe_run_ready ()] deterministically chooses to run:
   - no elements
