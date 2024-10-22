@@ -38,6 +38,12 @@ let init () =
     end
   end
 
+let name_of = function
+      | `Fifos -> "fifos"
+      | `Multififos -> "multififos"
+      | `Randos -> "randos"
+      | `Lwt -> "lwt"
+
 let rec run_fiber ?(max_domains = 1) ?(allow_lwt = true) ?fatal_exn_handler
     fiber main =
   let main = 
@@ -53,6 +59,9 @@ let rec run_fiber ?(max_domains = 1) ?(allow_lwt = true) ?fatal_exn_handler
     | 2 -> `Randos
     | _ -> `Lwt
   in
+  let caller = Printexc.get_callstack 100 |> Printexc.raw_backtrace_to_string in
+  let data () = ["caller", `String caller] in
+  Trace.with_span ~data ~__FILE__ ~__LINE__ (name_of scheduler) @@ fun _ ->
   let n_domains = Int.min max_domains (Domain.recommended_domain_count ()) in
   let quota = 1 + Random.int 100 in
   match
@@ -106,6 +115,9 @@ let rec run_fiber ?(max_domains = 1) ?(allow_lwt = true) ?fatal_exn_handler
     end
 
 let run ?max_domains ?allow_lwt ?fatal_exn_handler ?(forbid = false) main =
+  let caller = Printexc.get_callstack 100 |> Printexc.raw_backtrace_to_string in
+  let data () = ["caller", `String caller] in
+  Trace.with_span ~data ~__FILE__ ~__LINE__ "run" @@ fun _ ->
   let computation = Computation.create ~mode:`LIFO () in
   let fiber = Fiber.create ~forbid computation in
   let main _ = Computation.capture computation main () in
